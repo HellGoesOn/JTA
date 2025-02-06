@@ -1,0 +1,3 @@
+displayName = Jojo's Terrarian Adventure
+author = Consume, dIM&bEEFY, HellGoesOn
+version = 0.1

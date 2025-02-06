@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Import tModLoader mod properties -->
+	<Import Project="..\tModLoader.targets" />
+	<ItemGroup>
+	  <None Remove="Assets\Effects\FadeOutShader.fx" />
+	</ItemGroup>
+
+	<!-- General -->
+
+	<!-- References -->
+
+</Project>

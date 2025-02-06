@@ -1,0 +1,15 @@
+Mods: {
+	JTA: {
+		Keybinds: {
+			"Summon Stand.DisplayName": Summon  Stand
+			"Use Ability.DisplayName": Use  Ability
+			"Open Ability Menu.DisplayName": Open  Ability  Menu
+			"Menu Up.DisplayName": Menu  Up
+			"Menu Down.DisplayName": Menu  Down
+			"Menu Left.DisplayName": Menu  Left
+			"Menu Right.DisplayName": Menu  Right
+		}
+
+		Projectiles.StarPlatinumProjectile.DisplayName: Star Platinum Projectile
+	}
+}
