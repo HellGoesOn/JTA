@@ -33,12 +33,12 @@ namespace JTA.Common.UI
         {
             if (abilityInterface.CurrentState != null) {
                 abilityInterface.SetState(null);
-                abilitySelectorUI.ToggleStandPerks(null);
+                //abilitySelectorUI.ToggleStandPerks(null);
                 return;
             }
             abilityInterface.SetState(abilitySelectorUI);
             abilitySelectorUI.Open();
-            abilitySelectorUI.ToggleStandPerks(StandPlayer.Get().stand);
+            //abilitySelectorUI.ToggleStandPerks(StandPlayer.Get().stand);
         }
 
         public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)

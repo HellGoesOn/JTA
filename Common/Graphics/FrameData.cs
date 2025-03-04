@@ -2,7 +2,7 @@
 
 namespace JTA.Common.Graphics
 {
-    public struct FrameData(int x, int y, int width, int height, int timePerFrame)
+    public class FrameData(int x, int y, int width, int height, int timePerFrame)
     {
         public int x = x;
         public int y = y;
@@ -10,6 +10,6 @@ namespace JTA.Common.Graphics
         public int height = height;
         public int timePerFrame = timePerFrame;
 
-        public readonly Rectangle AsRect() => new(x, y, width, height);
+        public Rectangle AsRect() => new(x, y, width, height);
     }
 }

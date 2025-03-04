@@ -1,9 +1,9 @@
-﻿using JTA.Common.Stands;
-using JTA.Common.Systems;
+﻿using JTA.Common.Systems;
 using JTA.Common.UI;
-using JTA.Content.Stands;
-using Steamworks;
-using System.Linq;
+using JTA.Content;
+using Microsoft.Xna.Framework;
+using System.Collections.Generic;
+using System.IO;
 using Terraria;
 using Terraria.GameInput;
 using Terraria.ModLoader;
@@ -12,100 +12,88 @@ namespace JTA.Common.Players
 {
     public class StandPlayer : ModPlayer
     {
-        internal int selectedAbilityIndex;
-        internal Stand stand;
+        public const int UNSUMMONED = -999;
+        public const string NOSTAND = "None";
 
-        public int unallocatedPerkPoints;
+        public int activeStandProjectile;
+        public string stand;
+        public int selectedAbilityIndex;
+
+        /// <summary>
+        /// IDs of active perks;
+        /// </summary>
+        public List<int> activePerks;
 
         public override void Initialize()
         {
+            activePerks = [];
+            activeStandProjectile = UNSUMMONED;
+            stand = "Star Platinum";
             selectedAbilityIndex = 0;
-            stand = StandDefinitions.Get("StarPlatinum");
-            //stand = new Stand {
-            //    name = "Test"
-            //};
-            stand.abilities.AddRange([new TestAbility()
-                {
-                Name = "Test 1",
-                Description = "Test desc 1"
-            }, new TestAbility()
-            {
-                Name = "Test 2",
-                Description = "Test desc 2"
-            }, new TestAbility()
-            {
-                Name = "Test 3",
-                Description = "Test desc 3"
-            }]);
-
-            stand.AddPerk(new TestPerk());
-
-            for(int i = 1; i <= 5; i++) {
-                var perks = stand.GetPerks();
-
-                var topPerk = new TestPerk() {
-                    path = PerkPath.Top,
-                    tier = i
-                };
-
-                var lastTopPerk = perks.LastOrDefault(x => x.path == PerkPath.Top);
-
-                if (lastTopPerk != null)
-                    topPerk.requiredPerks = [lastTopPerk.id];
-
-                var midPerk = new TestPerk() {
-                    path = PerkPath.Mid,
-                    tier = i
-                };
-
-                var lastMidPerk = perks.LastOrDefault(x => x.path == PerkPath.Mid);
-
-                if (lastMidPerk != null)
-                    midPerk.requiredPerks = [lastMidPerk.id];
-
-                var botPerk = new TestPerk() {
-                    path = PerkPath.Bot,
-                    tier = i
-                };
-
-                var botTopPerk = perks.LastOrDefault(x => x.path == PerkPath.Bot);
-
-                if (botTopPerk != null)
-                    botPerk.requiredPerks = [botTopPerk.id];
-
-                stand.AddPerks([topPerk, midPerk, botPerk]);
-            }
         }
 
-        public void SetStand(Stand stand)
+        public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
         {
-            this.stand = stand; 
-        }
-
-        public override void PostUpdate()
-        {
-            stand?.Update(Player);
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)PacketType.SyncPlayer);
+            packet.Write((byte)Player.whoAmI);
+            packet.Write((int)activeStandProjectile);
+            packet.Write((int)selectedAbilityIndex);
+            packet.Write(stand);
+            packet.Send(toWho, fromWho);
         }
 
         public override void ProcessTriggers(TriggersSet triggersSet)
         {
-            base.ProcessTriggers(triggersSet);
-
-            if (stand == null)
+            if (!IsStandUser)
                 return;
 
-            if(KeybindSystem.OpenAbilityMenu.JustPressed) {
+            if(KeybindSystem.UseAbilityButton.JustPressed) {
+                StandDefinitions.Stands[stand].Abilities[selectedAbilityIndex].Use(Player);
+            }
+
+            if (KeybindSystem.OpenAbilityMenu.JustPressed) {
                 var ui = ModContent.GetInstance<AbilitySelectorUISystem>();
                 ui.ToggleUI();
             }
 
             if (KeybindSystem.SummonStand.JustPressed) {
-                stand.Summon(Player);
-                Main.NewText("Test");
+                if (activeStandProjectile == UNSUMMONED) {
+                    // summon logic
+                    activeStandProjectile = Projectile.NewProjectile(
+                        Player.GetSource_FromThis("JTA: Summon"), 
+                        Player.Center,
+                        Vector2.Zero,
+                        StandDefinitions.Stands[stand].SummonedStandId,
+                        10,
+                        1,
+                        Main.myPlayer);
+                }
             }
+                
+        }
 
-            if(KeybindSystem.UseAbilityButton.JustPressed) {
-                stand.abilities[selectedAbilityIndex].UseAbility(Player, stand);
+        public void ReceiveSyncPlayer(BinaryReader reader)
+        {
+            activeStandProjectile = reader.ReadInt32();
+            selectedAbilityIndex = reader.ReadInt32();
+            stand = reader.ReadString();
+        }
+
+        public override void CopyClientState(ModPlayer targetCopy)
+        {
+            StandPlayer clone = (StandPlayer)targetCopy;
+            clone.activeStandProjectile = activeStandProjectile;
+            clone.selectedAbilityIndex = selectedAbilityIndex;
+            clone.stand = stand;
+        }
+
+        public override void SendClientChanges(ModPlayer clientPlayer)
+        {
+            StandPlayer clone = (StandPlayer)clientPlayer;
+
+            if (activeStandProjectile != clone.activeStandProjectile || selectedAbilityIndex != clone.selectedAbilityIndex || stand != clone.stand) {
+                SyncPlayer(-1, Main.myPlayer, false);
             }
         }
 
@@ -116,6 +104,14 @@ namespace JTA.Common.Players
             return player.GetModPlayer<StandPlayer>();
         }
 
-        public bool IsStandUser => stand != null;
+        public bool IsStandUser => stand != NOSTAND;
+
+        public Projectile GetStandProjectile()
+        {
+            if (activeStandProjectile != UNSUMMONED)
+                return Main.projectile[activeStandProjectile];
+
+            return null;
+        }
     }
 }

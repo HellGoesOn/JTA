@@ -96,6 +96,17 @@ namespace JTA.Common.Graphics
 
             return this;
         }
+
+        public SpriteAnimation SetSpeed(int startIndex, int newSpeed, int endIndex = -1)
+        {
+            if(endIndex == -1) 
+                endIndex = frames.Count - 1;
+            for(int i = startIndex; i < endIndex; i++) {
+                frames[i].timePerFrame = newSpeed;
+            }
+
+            return this;
+        }
     }
 
     public enum FrameFillStyle

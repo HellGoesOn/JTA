@@ -1,17 +1,20 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using System.Collections.Generic;
-using JTA.Common.Graphics;
+﻿using JTA.Common.Graphics;
 using JTA.Common.Players;
+using Microsoft.Xna.Framework;
+using System.Collections.Generic;
+using System.IO;
 using Terraria;
-using Terraria.GameContent;
 using Terraria.ModLoader;
 
 namespace JTA.Common.Stands
 {
     public abstract class StandProjectile : ModProjectile
     {
-        public string currentAnimation;
+        private string currentAnimation;
+
+        public string nextAnimation = "";
+
+        public bool mouseLeftState, mouseRightState;
 
         public Dictionary<string, SpriteAnimation> animations = [];
 
@@ -20,8 +23,9 @@ namespace JTA.Common.Stands
         public sealed override void SetDefaults()
         {
             base.SetDefaults();
+            Projectile.timeLeft = 12;
 
-            currentAnimation = "";
+            CurrentAnimation = "";
 
             SafeDefaults();
         }
@@ -34,12 +38,24 @@ namespace JTA.Common.Stands
         public sealed override void AI()
         {
             base.AI();
-            Projectile.timeLeft = 10;
             SafeAI();
 
-            if(animations.TryGetValue(currentAnimation, out SpriteAnimation value)) {
+            if(animations.TryGetValue(CurrentAnimation, out SpriteAnimation value)) {
                 value.Update();
+
+                if(value.finished && nextAnimation != "") {
+                    value.Reset();
+                    currentAnimation = nextAnimation;
+                    nextAnimation = "";
+                    Projectile.netUpdate = true;
+                }
             }
+
+            Projectile.TryGetOwner(out var owner);
+
+            mouseLeftState = Main.player[Projectile.owner].whoAmI == Main.myPlayer && owner.controlUseItem;
+            mouseRightState = Main.player[Projectile.owner].whoAmI == Main.myPlayer && owner.controlUseTile;
+            Projectile.timeLeft = 10;
         }
 
         public virtual void SafeAI()
@@ -54,5 +70,39 @@ namespace JTA.Common.Stands
 
             return base.PreDraw(ref lightColor);
         }
+
+        public override void SendExtraAI(BinaryWriter writer)
+        {
+            base.SendExtraAI(writer);
+
+            writer.Write(CurrentAnimation);
+        }
+
+        public override void ReceiveExtraAI(BinaryReader reader)
+        {
+            base.ReceiveExtraAI(reader);
+
+            CurrentAnimation = reader.ReadString();
+        }
+
+        public bool LeftClick => Main.player[Projectile.owner].whoAmI == Main.myPlayer && Main.player[Projectile.owner].controlUseItem && !mouseLeftState;
+        public bool RightClick => Main.player[Projectile.owner].whoAmI == Main.myPlayer && Main.player[Projectile.owner].controlUseTile && !mouseRightState;
+
+        public string CurrentAnimation 
+            { 
+            get => currentAnimation;
+            set {
+                if(!string.IsNullOrWhiteSpace(currentAnimation))
+                    animations[currentAnimation].Reset();
+                currentAnimation = value;
+            }
+        }
+
+        public void Add(string animationName, SpriteAnimation animation)
+        {
+            animations.Add(animationName, animation);
+        }
+
+        public bool FirstTick => Projectile.timeLeft <= 10;
     }
 }

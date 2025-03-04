@@ -8,20 +8,19 @@ namespace JTA.Common.Systems
         public static ModKeybind UseAbilityButton { get; private set; }
         public static ModKeybind OpenAbilityMenu { get; private set; }
         public static ModKeybind SummonStand { get; private set; }
-
+        public static ModKeybind StandPose { get; private set; }
 
         public static ModKeybind ArrowUp { get; private set; }
         public static ModKeybind ArrowDown { get; private set; }
         public static ModKeybind ArrowLeft { get; private set; }
         public static ModKeybind ArrowRight { get; private set; }
 
-
-
         public override void Load()
         {
             SummonStand = KeybindLoader.RegisterKeybind(Mod, "Summon Stand", "Z");
             UseAbilityButton = KeybindLoader.RegisterKeybind(Mod, "Use Ability", "X");
             OpenAbilityMenu = KeybindLoader.RegisterKeybind(Mod, "Open Ability Menu", "F");
+            StandPose = KeybindLoader.RegisterKeybind(Mod, "Pose", "C");
 
             ArrowUp = KeybindLoader.RegisterKeybind(Mod, "Menu Up", Keys.Up);
             ArrowDown = KeybindLoader.RegisterKeybind(Mod, "Menu Down", Keys.Down);
@@ -34,6 +33,7 @@ namespace JTA.Common.Systems
             UseAbilityButton = null;
             OpenAbilityMenu = null;
             SummonStand = null;
+            StandPose = null;
 
             ArrowDown = null;
             ArrowLeft = null;

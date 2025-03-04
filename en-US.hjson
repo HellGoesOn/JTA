@@ -8,8 +8,9 @@ Mods: {
 			"Menu Down.DisplayName": Menu  Down
 			"Menu Left.DisplayName": Menu  Left
 			"Menu Right.DisplayName": Menu  Right
+			Pose.DisplayName: Pose
 		}
 
-		Projectiles.StarPlatinumProjectile.DisplayName: Star Platinum Projectile
+		Projectiles.StarPlatinumProjectile.DisplayName: Star Platinum
 	}
 }

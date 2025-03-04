@@ -7,16 +7,16 @@ namespace JTA.Common.Systems
     [Autoload(Side = ModSide.Client)]
     public class ShaderSystem : ModSystem
     {
-        public static Effect fadeOutShader;
+        public static Effect FadeOutShader { get; private set; }
 
         public override void OnModLoad()
         {
-            fadeOutShader = ModContent.Request<Effect>("JTA/Assets/Effects/FadeOutShader", AssetRequestMode.ImmediateLoad).Value;
+            FadeOutShader = ModContent.Request<Effect>("JTA/Assets/Effects/FadeOutShader", AssetRequestMode.ImmediateLoad).Value;
         }
 
         public override void OnModUnload()
         {
-            fadeOutShader = null;
+            FadeOutShader = null;
         }
     }
 }
