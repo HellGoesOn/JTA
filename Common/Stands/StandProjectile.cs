@@ -1,5 +1,7 @@
 ﻿using JTA.Common.Graphics;
 using JTA.Common.Players;
+using JTA.Content.Stands;
+using Microsoft.CodeAnalysis;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.IO;
@@ -24,6 +26,7 @@ namespace JTA.Common.Stands
         {
             base.SetDefaults();
             Projectile.timeLeft = 12;
+            Projectile.tileCollide = false;
 
             CurrentAnimation = "";
 
@@ -92,8 +95,8 @@ namespace JTA.Common.Stands
             { 
             get => currentAnimation;
             set {
-                if(!string.IsNullOrWhiteSpace(currentAnimation))
-                    animations[currentAnimation].Reset();
+                if(!string.IsNullOrWhiteSpace(currentAnimation) && animations.TryGetValue(currentAnimation, out SpriteAnimation anim))
+                    anim.Reset();
                 currentAnimation = value;
             }
         }
@@ -104,5 +107,19 @@ namespace JTA.Common.Stands
         }
 
         public bool FirstTick => Projectile.timeLeft <= 10;
+
+        public void Damage(int value, Vector2 position, Vector2 size, bool follow = true, int timeLeft = 2, float knockback = 0)
+        {
+            Player plr = Main.player[Projectile.owner];
+            int hitboxId = Projectile.NewProjectile(plr.GetSource_FromThis("JTA: Damage Hitbox"), position, Vector2.Zero, ModContent.ProjectileType<DamageHitbox>(), value,knockback, Projectile.owner, follow ? Projectile.whoAmI : -1);
+
+            Projectile proj = Main.projectile[hitboxId];
+            proj.width = (int)size.X;
+            proj.height = (int)size.Y;
+            proj.Center -= size * 0.5f;
+            proj.timeLeft = timeLeft;
+            proj.DamageType = Projectile.DamageType;
+            proj.direction = Projectile.direction;
+        }
     }
 }

@@ -10,12 +10,12 @@ namespace JTA.Common.Graphics
 {
     public class SpriteAnimation
     {
-        int time;
+        public int time;
         public int currentFrame;
         public bool looping;
         public bool finished;
         public string textureName;
-        public Texture2D texture;
+        public Asset<Texture2D> texture;
         public List<FrameData> frames;
 
         public AnimationEvent onAnimationEnd;
@@ -27,7 +27,7 @@ namespace JTA.Common.Graphics
             frames = [];
             this.textureName = texture;
             if(Main.netMode != NetmodeID.Server) {
-                this.texture = ModContent.Request<Texture2D>(texture, AssetRequestMode.ImmediateLoad).Value;
+                this.texture = ModContent.Request<Texture2D>(textureName);
             }
         }
 
@@ -76,6 +76,15 @@ namespace JTA.Common.Graphics
             finished = false;
         }
 
+        /// <summary>
+        /// Adds simple frames to an animation
+        /// </summary>
+        /// <param name="frameCount">Number of frames added</param>
+        /// <param name="width">Width of a single frame</param>
+        /// <param name="height">Height of a single frame</param>
+        /// <param name="frameTime">Animation speed</param>
+        /// <param name="style">Allows you to specify of animation is layed out vertically or horizontally. Don't set this parameter unless you know what you are doing.</param>
+        /// <returns>Same instance of SpriteAnimation, allowing you to chain commands</returns>
         public SpriteAnimation FillFrames(int frameCount, int width, int height, int frameTime, FrameFillStyle style = FrameFillStyle.Vertical)
         {
             var x = 0;
@@ -97,6 +106,19 @@ namespace JTA.Common.Graphics
             return this;
         }
 
+        public SpriteAnimation SetLoop(bool  loop)
+        {
+            this.looping = loop;
+            return this;
+        }
+
+        /// <summary>
+        /// Allows you to set animation speed for specific frames
+        /// </summary>
+        /// <param name="startIndex">Index of first frame for speed adjustment</param>
+        /// <param name="newSpeed">New speed</param>
+        /// <param name="endIndex">End index. If not set, will adjust speed for all frames starting from startIndex</param>
+        /// <returns>Same instance of SpriteAnimation, allowing you to chain commands</returns>
         public SpriteAnimation SetSpeed(int startIndex, int newSpeed, int endIndex = -1)
         {
             if(endIndex == -1) 

@@ -13,6 +13,8 @@ namespace JTA.Content
         {
             var starPlatinum = new Stand(ModContent.ProjectileType<StarPlatinumProjectile>(), "Star Platinum");
             starPlatinum.Abilities.Add(new StarFingerAbility());
+            starPlatinum.Abilities.Add(new StarSuckAbility());
+            starPlatinum.Abilities.Add(new StarGroundPound());
 
             RegisterStand(starPlatinum);
         }

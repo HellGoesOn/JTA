@@ -19,6 +19,8 @@ namespace JTA.Common.Players
         public string stand;
         public int selectedAbilityIndex;
 
+        public float damageReduction;
+
         /// <summary>
         /// IDs of active perks;
         /// </summary>
@@ -30,6 +32,17 @@ namespace JTA.Common.Players
             activeStandProjectile = UNSUMMONED;
             stand = "Star Platinum";
             selectedAbilityIndex = 0;
+        }
+
+        public override void PostUpdate()
+        {
+            base.PostUpdate();
+            damageReduction = 0.0f;
+        }
+
+        public override void ModifyHitByNPC(NPC npc, ref Player.HurtModifiers modifiers)
+        {
+            modifiers.FinalDamage *= (1.0f - damageReduction);
         }
 
         public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)
@@ -70,7 +83,6 @@ namespace JTA.Common.Players
                         Main.myPlayer);
                 }
             }
-                
         }
 
         public void ReceiveSyncPlayer(BinaryReader reader)

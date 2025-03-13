@@ -11,6 +11,9 @@ Mods: {
 			Pose.DisplayName: Pose
 		}
 
-		Projectiles.StarPlatinumProjectile.DisplayName: Star Platinum
+		Projectiles: {
+			StarPlatinumProjectile.DisplayName: Star Platinum
+			DamageHitbox.DisplayName: Damage Hitbox
+		}
 	}
 }

@@ -3,9 +3,9 @@ using Terraria;
 
 namespace JTA.Content.Stands.Crusaders.StarPlatinum
 {
-    public class StarFingerAbility : StandAbility
+    public class StarSuckAbility : StandAbility
     {
-        public StarFingerAbility() : base("Star Finger", "Ranged Attack inflicting knockback")
+        public StarSuckAbility() : base("Breath of Fresh Air", "Sucks in enemies, bringing them closer to you")
         {
         }
 
@@ -13,9 +13,9 @@ namespace JTA.Content.Stands.Crusaders.StarPlatinum
         {
             var check = StandPlayer.Get(player).GetStandProjectile();
 
-            if (check != null && check.ModProjectile is StarPlatinumProjectile realStand && realStand.CurrentAnimation == "Idle") {
+            if (check != null && check.ModProjectile is StarPlatinumProjectile realStand) {
                 realStand.startDirection = player.direction;
-                realStand.CurrentAnimation = "Finger";
+                realStand.CurrentAnimation = "Suck";
                 check.netUpdate = true;
             }
         }
