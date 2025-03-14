@@ -14,6 +14,7 @@ Mods: {
 		Projectiles: {
 			StarPlatinumProjectile.DisplayName: Star Platinum
 			DamageHitbox.DisplayName: Damage Hitbox
+			IggyThrown.DisplayName: Iggy Thrown
 		}
 	}
 }

@@ -2,6 +2,7 @@
 using JTA.Common.Players;
 using JTA.Common.Stands;
 using JTA.Common.Systems;
+using JTA.Content.Stands.Crusaders.StarPlatinum;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
@@ -37,23 +38,24 @@ namespace JTA.Content.Stands.Crusaders
         public override void SafeDefaults()
         {
             fists = [];
-            for(int i = 0; i < 20; i++) {
+            for(int i = 0; i < 30; i++) {
                 fists.Add(new StarFist());
             }
             range = 32 * 7;
-            Projectile.timeLeft = 20;
+            Projectile.timeLeft = 10;
             Projectile.tileCollide = false;
             var path = "JTA/Content/Stands/Crusaders/StarPlatinum/";
             Add("Idle", new SpriteAnimation(path + "SPIdle").FillFrames(8, 100, 100, 5));
-            Add("Punch1", new SpriteAnimation(path + "SPPunch1").FillFrames(5, 140, 100, 5));
-            Add("Punch2", new SpriteAnimation(path + "SPPunch2").FillFrames(7, 132, 100, 5));
-            Add("Punch3", new SpriteAnimation(path + "SPPunch3").FillFrames(8, 118, 100, 5));
+            Add("Punch2", new SpriteAnimation(path + "SPPunch1").FillFrames(5, 140, 100, 5));
+            Add("Punch1", new SpriteAnimation(path + "SPPunch2").FillFrames(7, 132, 100, 5));
+            Add("Punch3", new SpriteAnimation(path + "SPPunch3").FillFrames(11, 118, 100, 5));
             Add("Barrage", new SpriteAnimation(path + "SPBarrage").FillFrames(6, 92, 100, 2));
             Add("Finger", new SpriteAnimation(path + "SPStarFinger").FillFrames(16, 292, 100, 5).SetSpeed(10, 3));
             Add("Suck", new SpriteAnimation(path + "SPZuck").FillFrames(23, 300, 202, 5));
             Add("GPJump", new SpriteAnimation(path + "SPGroundPound").FillFrames(8, 148, 206, 5).SetLoop(false));
             Add("GPFall", new SpriteAnimation(path + "SPGroundPound").FillFrames(12, 148, 206, 5).SetLoop(false));
             Add("GPHit", new SpriteAnimation(path + "SPGroundPound").FillFrames(16, 148, 206, 5).SetLoop(false));
+            Add("Throw", new SpriteAnimation(path + "SPThrow").FillFrames(11, 166, 128, 5).SetLoop(false));
 
             Add("Block", new SpriteAnimation(path + "SPBlock").FillFrames(4, 100, 100, 5).SetLoop(false));
 
@@ -99,18 +101,26 @@ namespace JTA.Content.Stands.Crusaders
                     if (!mouseRightState)
                         nextAnimation = "Idle";
                     break;
+                case "Throw":
+                    var mousePosition = Main.MouseWorld;
+                    var dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * 16;
+                    if (anim.currentFrame == 8 && anim.time == 0)
+                        Projectile.NewProjectile(owner.GetSource_FromThis(), Projectile.Center, dir, ModContent.ProjectileType<IggyThrown>(), 60, 4, Projectile.owner);
+
+                    nextAnimation = "Idle";
+                    break;
                 case "Barrage":
                     StarFist fist = fists[Main.rand.Next(fists.Count)];
                     if (fist.opacity <= 0) {
                         fist.distance = 0;
-                        fist.startOffset = new Vector2(25, Main.rand.Next(-20, 25));
+                        fist.startOffset = new Vector2(-25, Main.rand.Next(-30, 40));
                         fist.opacity = 1.25f;
                         fist.variation = Main.rand.Next(4);
-                        fist.speed = Main.rand.Next(450, 650) * 0.01f;
+                        fist.speed = Main.rand.Next(850, 1250) * 0.01f;
                     }
                     owner.heldProj = Projectile.whoAmI;
-                    var mousePosition = Main.MouseWorld;
-                    var dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
+                    mousePosition = Main.MouseWorld;
+                    dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
                     direction = mousePosition.X < owner.Center.X ? -1 : 1;
                     Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + dir, 0.4f);
@@ -271,10 +281,10 @@ namespace JTA.Content.Stands.Crusaders
                 case "GPHit":
                     direction = owner.direction;
                     owner.heldProj = Projectile.whoAmI;
-                    Projectile.Center = owner.Center;
+                    Projectile.Center = owner.Center - new Vector2(0, 70);
                     if (anim.currentFrame == 0 && anim.time <= 0) {
                         anim.currentFrame = 13;
-                        Damage(60, Projectile.Center, new Vector2(300, 100), true, 10, 1);
+                        Damage(60, Projectile.Center + new Vector2(0, 70), new Vector2(300, 100), false, 10, 1);
                     }
 
                     nextAnimation = "Idle";
@@ -292,7 +302,7 @@ namespace JTA.Content.Stands.Crusaders
             for (int i = 0; i < fists.Count; i++) {
                 var fist = fists[i];
                 if (fist.opacity > 0)
-                    fist.opacity -= 0.06f;
+                    fist.opacity -= 0.24f;
                 fist.distance += fist.speed;
             }
         }
@@ -307,7 +317,8 @@ namespace JTA.Content.Stands.Crusaders
                 var sfx = direction == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
 
                 var texture = anim.texture.Value;
-
+                Main.spriteBatch.End();
+                Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, Main.DefaultSamplerState, DepthStencilState.None, Main.Rasterizer, null, Main.GameViewMatrix.ZoomMatrix);
                 anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), Color.White, 0, scale: scale, sfx: sfx);
                 var frame = anim.frames[anim.currentFrame];
                 Effect fx = ShaderSystem.FadeOutShader;

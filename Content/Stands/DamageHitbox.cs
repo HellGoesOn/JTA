@@ -22,6 +22,7 @@ namespace JTA.Content.Stands
             Projectile.penetrate = -1;
             Projectile.damage = 0;
             Projectile.tileCollide = false;
+            Projectile.aiStyle = -1;
             hitSpeed = 20;
         }
 

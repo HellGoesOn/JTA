@@ -1,4 +1,5 @@
-﻿using JTA.Common.Systems;
+﻿using JTA.Common.Stands;
+using JTA.Common.Systems;
 using JTA.Common.UI;
 using JTA.Content;
 using Microsoft.Xna.Framework;
@@ -32,6 +33,17 @@ namespace JTA.Common.Players
             activeStandProjectile = UNSUMMONED;
             stand = "Star Platinum";
             selectedAbilityIndex = 0;
+        }
+
+        public override void ResetEffects()
+        {
+            base.ResetEffects();
+            if (activeStandProjectile != UNSUMMONED) {
+                Projectile proj = Main.projectile[activeStandProjectile];
+                if (proj.ModProjectile is StandProjectile stand)
+                    if (stand.CurrentAnimation == "Block")
+                        Player.controlUseItem = false;
+            }
         }
 
         public override void PostUpdate()

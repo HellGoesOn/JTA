@@ -116,7 +116,7 @@ namespace JTA.Common.Stands
             Projectile proj = Main.projectile[hitboxId];
             proj.width = (int)size.X;
             proj.height = (int)size.Y;
-            proj.Center -= size * 0.5f;
+            //proj.Center -= size * 0.5f;
             proj.timeLeft = timeLeft;
             proj.DamageType = Projectile.DamageType;
             proj.direction = Projectile.direction;

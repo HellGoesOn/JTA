@@ -15,6 +15,7 @@ namespace JTA.Content
             starPlatinum.Abilities.Add(new StarFingerAbility());
             starPlatinum.Abilities.Add(new StarSuckAbility());
             starPlatinum.Abilities.Add(new StarGroundPound());
+            starPlatinum.Abilities.Add(new StarThrowAbility());
 
             RegisterStand(starPlatinum);
         }
