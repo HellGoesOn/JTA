@@ -8,6 +8,7 @@ namespace JTA
 {
     public enum PacketType : byte
     {
+        SyncMouse,
         SyncPlayer,
         SyncPerks,
         UsedAbility

@@ -56,8 +56,8 @@ namespace JTA.Common.Stands
 
             Projectile.TryGetOwner(out var owner);
 
-            mouseLeftState = Main.player[Projectile.owner].whoAmI == Main.myPlayer && owner.controlUseItem;
-            mouseRightState = Main.player[Projectile.owner].whoAmI == Main.myPlayer && owner.controlUseTile;
+            mouseLeftState = owner.controlUseItem;
+            mouseRightState = owner.controlUseTile;
             Projectile.timeLeft = 10;
         }
 
@@ -100,6 +100,8 @@ namespace JTA.Common.Stands
                 currentAnimation = value;
             }
         }
+
+        public Vector2 MousePosition(Player player) => StandPlayer.Get(player).MousePosition;
 
         public void Add(string animationName, SpriteAnimation animation)
         {

@@ -2,7 +2,7 @@
 using Terraria;
 using Terraria.ModLoader;
 
-namespace JTA.Content.GlobalEffects
+namespace JTA.Common.Systems
 {
     // TO-DO: implement
     public class TimeStopSystem : ModSystem
@@ -19,11 +19,11 @@ namespace JTA.Content.GlobalEffects
             TimeStopSystem system = ModContent.GetInstance<TimeStopSystem>();
             TimeStopOwnerType type = TimeStopOwnerType.None;
 
-            if(who is Player)
+            if (who is Player)
                 type = TimeStopOwnerType.Player;
-            if(who is NPC)
+            if (who is NPC)
                 type = TimeStopOwnerType.NPC;
-            if(who is Projectile)
+            if (who is Projectile)
                 type = TimeStopOwnerType.Projectile;
 
             system._list.Add(new(who.whoAmI, howLong, type));
@@ -33,10 +33,11 @@ namespace JTA.Content.GlobalEffects
         {
             base.PreUpdateTime();
 
-            for(int i = _list.Count-1; i >= 0; i--) {
+            for (int i = _list.Count - 1; i >= 0; i--)
+            {
                 TimeStopInstance instance = _list[i];
 
-                if(--instance.timeLeft <= 0)
+                if (--instance.timeLeft <= 0)
                     _list.RemoveAt(i);
             }
         }

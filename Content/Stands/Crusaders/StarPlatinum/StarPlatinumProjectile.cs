@@ -22,6 +22,7 @@ namespace JTA.Content.Stands.Crusaders
     /// </summary>
     public class StarPlatinumProjectile : StandProjectile
     {
+        int recoveryTime;
         int punchCounter;
         public int startDirection;
 
@@ -46,9 +47,9 @@ namespace JTA.Content.Stands.Crusaders
             Projectile.tileCollide = false;
             var path = "JTA/Content/Stands/Crusaders/StarPlatinum/";
             Add("Idle", new SpriteAnimation(path + "SPIdle").FillFrames(8, 100, 100, 5));
-            Add("Punch2", new SpriteAnimation(path + "SPPunch1").FillFrames(5, 140, 100, 5));
-            Add("Punch1", new SpriteAnimation(path + "SPPunch2").FillFrames(7, 132, 100, 5));
-            Add("Punch3", new SpriteAnimation(path + "SPPunch3").FillFrames(11, 118, 100, 5));
+            Add("Punch2", new SpriteAnimation(path + "SPPunch1").FillFrames(5, 140, 100, 3));
+            Add("Punch1", new SpriteAnimation(path + "SPPunch2").FillFrames(7, 132, 100, 3));
+            Add("Punch3", new SpriteAnimation(path + "SPPunch3").FillFrames(11, 118, 100, 3));
             Add("Barrage", new SpriteAnimation(path + "SPBarrage").FillFrames(6, 92, 100, 2));
             Add("Finger", new SpriteAnimation(path + "SPStarFinger").FillFrames(16, 292, 100, 5).SetSpeed(10, 3));
             Add("Suck", new SpriteAnimation(path + "SPZuck").FillFrames(23, 300, 202, 5));
@@ -59,9 +60,12 @@ namespace JTA.Content.Stands.Crusaders
 
             Add("Block", new SpriteAnimation(path + "SPBlock").FillFrames(4, 100, 100, 5).SetLoop(false));
 
-            Add("ChargePrep", new SpriteAnimation(path + "SPChargePrep").FillFrames(22, 178, 146, 5));
-            Add("ChargeHold", new SpriteAnimation(path + "SPChargeIdle").FillFrames(4, 178, 146, 5));
-            Add("ChargeAttack", new SpriteAnimation(path + "SPChargeAttack").FillFrames(25, 178, 146, 5));
+            Add("ChargePrep", new SpriteAnimation(path + "SPChargePrep").FillFrames(22, 178, 146, 2));
+            Add("ChargeHold", new SpriteAnimation(path + "SPChargeIdle").FillFrames(4, 178, 146, 6));
+            Add("ChargeAttack", new SpriteAnimation(path + "SPChargeAttack").FillFrames(25, 178, 146, 4));
+
+            Add("Pose", new SpriteAnimation(path + "SPPose").FillFrames(6, 136, 100, 5).SetLoop(false));
+            Add("PoseIdle", new SpriteAnimation(path + "SPPoseIdle").FillFrames(9, 136, 100, 5));
 
             CurrentAnimation = "Spawn";
 
@@ -82,12 +86,26 @@ namespace JTA.Content.Stands.Crusaders
 
             animations.TryGetValue(CurrentAnimation, out var anim);
 
-            if(owner.controlUseItem) {
+            if (owner == null)
+            {
+                return;
+            }
+
+            if (owner.controlUseItem) {
                 lmbHoldTime++;
             }
             else {
                 lmbHoldTime = 0;
             }
+
+            if (recoveryTime > 0)
+                recoveryTime--;
+
+            var mousePosition = Main.MouseWorld;
+            if (Projectile.owner != Main.myPlayer)
+                mousePosition = MousePosition(owner);
+            //Main.NewText($"PLR: {mousePosition} MOUSE: {Main.MouseWorld}");
+            var dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
             switch (CurrentAnimation) {
                 case "Spawn":
@@ -102,8 +120,7 @@ namespace JTA.Content.Stands.Crusaders
                         nextAnimation = "Idle";
                     break;
                 case "Throw":
-                    var mousePosition = Main.MouseWorld;
-                    var dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * 16;
+                    dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * 24;
                     if (anim.currentFrame == 8 && anim.time == 0)
                         Projectile.NewProjectile(owner.GetSource_FromThis(), Projectile.Center, dir, ModContent.ProjectileType<IggyThrown>(), 60, 4, Projectile.owner);
 
@@ -119,7 +136,7 @@ namespace JTA.Content.Stands.Crusaders
                         fist.speed = Main.rand.Next(850, 1250) * 0.01f;
                     }
                     owner.heldProj = Projectile.whoAmI;
-                    mousePosition = Main.MouseWorld;
+                    //mousePosition = Main.MouseWorld;
                     dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
                     direction = mousePosition.X < owner.Center.X ? -1 : 1;
@@ -132,6 +149,7 @@ namespace JTA.Content.Stands.Crusaders
                         nextAnimation = "Idle";
                     break;
                 case "Idle":
+
                     if (mouseRightState)
                         CurrentAnimation = "Block";
 
@@ -142,13 +160,23 @@ namespace JTA.Content.Stands.Crusaders
                         if (KeybindSystem.SummonStand.JustPressed && Projectile.timeLeft <= 10)
                             CurrentAnimation = "Despawn";
 
+                        if (KeybindSystem.StandPose.JustPressed) {
+                            StandPlayer.Get(owner).parryTime = 30;
+                            CurrentAnimation = "Pose";
+                        }
                         if (Main.mouseMiddle && !mouseMiddleReleaseOld) {
                             CurrentAnimation = "ChargePrep";
                         }
                     }
                     direction = owner.direction;
-                    Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + new Vector2(-50 * direction, -24), 0.12f);
-                    punchCounter = 0;
+                    if (recoveryTime <= 0) {
+                        punchCounter = 0;
+                        Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + new Vector2(-50 * direction, -24), 0.12f);
+                    }
+                    else {
+                        direction = mousePosition.X < owner.Center.X ? -1 : 1;
+                        Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + dir, 0.4f);
+                    }
 
                     if (LeftClick) {
                         if (++punchCounter > 3)
@@ -160,15 +188,14 @@ namespace JTA.Content.Stands.Crusaders
                 case "Punch1":
                 case "Punch2":
                 case "Punch3":
+                    recoveryTime = 15;
                     owner.heldProj = Projectile.whoAmI;
-                    mousePosition = Main.MouseWorld;
-                    dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
                     direction = mousePosition.X < owner.Center.X ? -1 : 1;
 
                     // reason we check both frame & frame time is so we only spawn 1 hitbox per punch
                     if (anim.time == 0 && anim.currentFrame == 1 + punchCounter) {
-                        Damage(60, Projectile.Center, new Vector2(140, 100));
+                        Damage(60, Projectile.Center, new Vector2(140, 100), true, 2, 6);
                     }
 
                     Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + dir, 0.4f);
@@ -212,7 +239,7 @@ namespace JTA.Content.Stands.Crusaders
                                 continue;
 
                             if (rect.Contains(npc.Center.ToPoint())) {
-                                npc.Center += (Projectile.Center - npc.Center).SafeNormalize(-Vector2.UnitY) * 3f;
+                                npc.Center += (Projectile.Center - npc.Center).SafeNormalize(-Vector2.UnitY) * 6f;
                             }
                         }
                     }
@@ -220,7 +247,7 @@ namespace JTA.Content.Stands.Crusaders
                     break;
                 case "ChargePrep":
                     owner.heldProj = Projectile.whoAmI;
-                    mousePosition = Main.MouseWorld;
+                    //mousePosition = Main.MouseWorld;
                     dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
                     direction = mousePosition.X < owner.Center.X ? -1 : 1;
@@ -230,7 +257,7 @@ namespace JTA.Content.Stands.Crusaders
                     break;
                 case "ChargeHold":
                     owner.heldProj = Projectile.whoAmI;
-                    mousePosition = Main.MouseWorld;
+                   // mousePosition = Main.MouseWorld;
                     dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
                     direction = mousePosition.X < owner.Center.X ? -1 : 1;
@@ -243,7 +270,7 @@ namespace JTA.Content.Stands.Crusaders
                     owner.heldProj = Projectile.whoAmI;
                     anim = animations[CurrentAnimation];
 
-                    mousePosition = Main.MouseWorld;
+                    //mousePosition = Main.MouseWorld;
                     dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
                     direction = mousePosition.X < owner.Center.X ? -1 : 1;
@@ -251,7 +278,7 @@ namespace JTA.Content.Stands.Crusaders
                     Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + dir, 0.4f);
 
                     if (anim.currentFrame == 4 && anim.time <= 0) {
-                        Damage(60, Projectile.Center, new Vector2(200, 200));
+                        Damage(600, Projectile.Center, new Vector2(200, 200));
                     }
 
                     nextAnimation = "Idle";
@@ -259,7 +286,7 @@ namespace JTA.Content.Stands.Crusaders
                 case "GPJump":
                     direction = owner.direction;
                     owner.heldProj = Projectile.whoAmI;
-                    Projectile.Center = owner.Center + new Vector2(40 * direction, -80);
+                    Projectile.Center = owner.Center + new Vector2(20 * direction, -30);
                     anim = animations[CurrentAnimation];
 
                     if (anim.currentFrame == 7 && anim.time <= 0) {
@@ -275,6 +302,16 @@ namespace JTA.Content.Stands.Crusaders
                         anim.currentFrame = 8;
                     }
 
+                    for(int i = 0; i < Main.maxNPCs; i++) {
+                        var npc = Main.npc[i];
+                        bool? canHit = CanHitNPC(npc);
+                        if (!npc.active || canHit.GetValueOrDefault())
+                            continue;
+
+                        if (Projectile.Hitbox.Intersects(npc.Hitbox))
+                            nextAnimation = "GPHit";
+                    }
+
                     if (owner.TouchedTiles.Count > 0)
                         nextAnimation = "GPHit";
                     break;
@@ -284,10 +321,27 @@ namespace JTA.Content.Stands.Crusaders
                     Projectile.Center = owner.Center - new Vector2(0, 70);
                     if (anim.currentFrame == 0 && anim.time <= 0) {
                         anim.currentFrame = 13;
-                        Damage(60, Projectile.Center + new Vector2(0, 70), new Vector2(300, 100), false, 10, 1);
+                        Damage(60, Projectile.Center + new Vector2(0, 70), new Vector2(300, 100), false, 10, 6);
                     }
 
                     nextAnimation = "Idle";
+                    break;
+                case "Pose":
+                    if ((Main.myPlayer == Projectile.whoAmI && !KeybindSystem.StandPose.Current))
+                        nextAnimation = "Idle";
+                    else
+                        nextAnimation = "PoseIdle";
+                    Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + new Vector2(10 * direction, -24), 0.4f);
+                    owner.heldProj = Projectile.whoAmI;
+                    direction = owner.direction;
+                    break;
+                case "PoseIdle":
+                    if ((Main.myPlayer == Projectile.whoAmI && !KeybindSystem.StandPose.Current))
+                        nextAnimation = "Idle";
+
+                    Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + new Vector2(40 * direction, -24), 0.4f);
+                    owner.heldProj = Projectile.whoAmI;
+                    direction = owner.direction;
                     break;
                 case "Despawn":
                     Projectile.Kill();
@@ -319,7 +373,10 @@ namespace JTA.Content.Stands.Crusaders
                 var texture = anim.texture.Value;
                 Main.spriteBatch.End();
                 Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, Main.DefaultSamplerState, DepthStencilState.None, Main.Rasterizer, null, Main.GameViewMatrix.ZoomMatrix);
-                anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), Color.White, 0, scale: scale, sfx: sfx);
+                if(CurrentAnimation == "GPJump")
+                    anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), Color.White * 0.75f, 0, scale: scale * 0.5f, sfx: sfx);
+                else
+                    anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), Color.White, 0, scale: scale, sfx: sfx);
                 var frame = anim.frames[anim.currentFrame];
                 Effect fx = ShaderSystem.FadeOutShader;
 

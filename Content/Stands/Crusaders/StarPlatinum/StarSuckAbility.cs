@@ -13,7 +13,7 @@ namespace JTA.Content.Stands.Crusaders.StarPlatinum
         {
             var check = StandPlayer.Get(player).GetStandProjectile();
 
-            if (check != null && check.ModProjectile is StarPlatinumProjectile realStand) {
+            if (check != null && check.ModProjectile is StarPlatinumProjectile realStand && realStand.CurrentAnimation == "Idle") {
                 realStand.startDirection = player.direction;
                 realStand.CurrentAnimation = "Suck";
                 check.netUpdate = true;

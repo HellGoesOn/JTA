@@ -16,5 +16,16 @@ Mods: {
 			DamageHitbox.DisplayName: Damage Hitbox
 			IggyThrown.DisplayName: Iggy Thrown
 		}
+
+		Configs: {
+			ServerConfig: {
+				DisplayName: Server Config
+
+				MouseTickRate: {
+					Label: Mouse Tick Rate
+					Tooltip: Lower value - faster updates and more accuracy, but potential lag issues on low end network
+				}
+			}
+		}
 	}
 }

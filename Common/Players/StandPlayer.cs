@@ -1,4 +1,5 @@
-﻿using JTA.Common.Stands;
+﻿using JTA.Common.Configs;
+using JTA.Common.Stands;
 using JTA.Common.Systems;
 using JTA.Common.UI;
 using JTA.Content;
@@ -7,7 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using Terraria;
 using Terraria.GameInput;
+using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 
 namespace JTA.Common.Players
 {
@@ -20,7 +23,15 @@ namespace JTA.Common.Players
         public string stand;
         public int selectedAbilityIndex;
 
+        public int parryTime;
+
         public float damageReduction;
+
+        public ushort mouseX;
+        public ushort mouseY;
+
+        public int tickrate = 20;
+        public int elapsedTicks;
 
         /// <summary>
         /// IDs of active perks;
@@ -37,6 +48,9 @@ namespace JTA.Common.Players
 
         public override void ResetEffects()
         {
+            //Main.NewText(parryTime);
+            if (parryTime > 0)
+                parryTime--;
             base.ResetEffects();
             if (activeStandProjectile != UNSUMMONED) {
                 Projectile proj = Main.projectile[activeStandProjectile];
@@ -44,6 +58,30 @@ namespace JTA.Common.Players
                     if (stand.CurrentAnimation == "Block")
                         Player.controlUseItem = false;
             }
+
+            if (Main.myPlayer == Player.whoAmI) {
+                mouseX = (ushort)(Main.MouseWorld.X / 16.0f);
+                mouseY = (ushort)(Main.MouseWorld.Y / 16.0f);
+            }
+
+            if(++elapsedTicks >= ModContent.GetInstance<ServerConfig>().MouseTickRate) {
+                elapsedTicks = 0;
+
+                if (Main.netMode == NetmodeID.MultiplayerClient)
+                    SendMouseUpdate();
+            }
+        }
+
+        public Vector2 MousePosition => new(mouseX * 16.0f, mouseY * 16.0f);
+
+        public void SendMouseUpdate(int toWho = -1, int fromWho = -1)
+        {
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)PacketType.SyncMouse);
+            packet.Write((byte)Player.whoAmI);
+            packet.Write((ushort)mouseX);
+            packet.Write((ushort)mouseY);
+            packet.Send(toWho, fromWho);
         }
 
         public override void PostUpdate()
@@ -55,6 +93,16 @@ namespace JTA.Common.Players
         public override void ModifyHitByNPC(NPC npc, ref Player.HurtModifiers modifiers)
         {
             modifiers.FinalDamage *= (1.0f - damageReduction);
+
+            if (parryTime > 0) {
+                Main.NewText("PARRY");
+                modifiers.Cancel();
+                Player.SetImmuneTimeForAllTypes(30);
+                //Player.AddImmuneTime(ImmunityCooldownID.General, 60);
+                parryTime = 0;
+                modifiers.DisableSound();
+                modifiers.DisableDust();
+            }
         }
 
         public override void SyncPlayer(int toWho, int fromWho, bool newPlayer)

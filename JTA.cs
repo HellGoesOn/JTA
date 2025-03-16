@@ -24,11 +24,22 @@ namespace JTA
             PacketType type = (PacketType)reader.ReadByte();
 
             switch (type) {
-                case PacketType.SyncPlayer:
-
-                    int plrID= reader.ReadByte();
+                case PacketType.SyncMouse:
+                    int plrID = reader.ReadByte();
 
                     StandPlayer splr = StandPlayer.Get(Main.player[plrID]);
+
+                    splr.mouseX = reader.ReadUInt16();
+                    splr.mouseY = reader.ReadUInt16();
+
+                    if (Main.netMode == NetmodeID.Server)
+                        splr.SendMouseUpdate(-1, whoAmI);
+
+                    break;
+                case PacketType.SyncPlayer:
+                    plrID= reader.ReadByte();
+
+                    splr = StandPlayer.Get(Main.player[plrID]);
 
                     splr.ReceiveSyncPlayer(reader);
 

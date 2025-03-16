@@ -33,7 +33,7 @@ namespace JTA.Content.Stands.Crusaders.StarPlatinum
 
         public override void PostDraw(Color lightColor)
         {
-            Main.EntitySpriteDraw(anim.texture.Value, Projectile.Center - Main.screenPosition, anim.frames[anim.currentFrame].AsRect(), lightColor, Projectile.velocity.ToRotation(), new Vector2(20, 18), 1f, SpriteEffects.None);
+            Main.EntitySpriteDraw(anim.texture.Value, Projectile.Center - Main.screenPosition, anim.frames[anim.currentFrame].AsRect(), lightColor, Projectile.velocity.ToRotation(), new Vector2(20, 18), 1f, Projectile.velocity.X < 0 ? SpriteEffects.FlipVertically : SpriteEffects.None);
         }
     }
 }
