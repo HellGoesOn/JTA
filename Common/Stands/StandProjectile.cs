@@ -27,6 +27,7 @@ namespace JTA.Common.Stands
             base.SetDefaults();
             Projectile.timeLeft = 12;
             Projectile.tileCollide = false;
+            Projectile.friendly = true;
 
             CurrentAnimation = "";
 
@@ -106,6 +107,13 @@ namespace JTA.Common.Stands
         public void Add(string animationName, SpriteAnimation animation)
         {
             animations.Add(animationName, animation);
+        }
+
+        public override void OnKill(int timeLeft)
+        {
+            if (Projectile.TryGetOwner(out var plr))
+                StandPlayer.Get(plr).activeStandProjectile = StandPlayer.UNSUMMONED;
+            
         }
 
         public bool FirstTick => Projectile.timeLeft <= 10;

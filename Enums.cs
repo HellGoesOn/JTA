@@ -11,6 +11,7 @@ namespace JTA
         SyncMouse,
         SyncPlayer,
         SyncPerks,
+        SyncTimeStop,
         UsedAbility
     }
 }

@@ -90,12 +90,20 @@ namespace JTA.Common.Players
             damageReduction = 0.0f;
         }
 
+        public override void UpdateDead()
+        {
+            if (activeStandProjectile != UNSUMMONED) {
+                var proj = Main.projectile[activeStandProjectile];
+                proj.Kill();
+                activeStandProjectile = UNSUMMONED;
+            }
+        }
+
         public override void ModifyHitByNPC(NPC npc, ref Player.HurtModifiers modifiers)
         {
             modifiers.FinalDamage *= (1.0f - damageReduction);
 
             if (parryTime > 0) {
-                Main.NewText("PARRY");
                 modifiers.Cancel();
                 Player.SetImmuneTimeForAllTypes(30);
                 //Player.AddImmuneTime(ImmunityCooldownID.General, 60);
@@ -138,7 +146,7 @@ namespace JTA.Common.Players
                         Player.Center,
                         Vector2.Zero,
                         StandDefinitions.Stands[stand].SummonedStandId,
-                        10,
+                        0,
                         1,
                         Main.myPlayer);
                 }

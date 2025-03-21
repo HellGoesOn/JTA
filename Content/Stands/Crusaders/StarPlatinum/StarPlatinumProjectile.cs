@@ -2,6 +2,7 @@
 using JTA.Common.Players;
 using JTA.Common.Stands;
 using JTA.Common.Systems;
+using JTA.Content.Projectiles;
 using JTA.Content.Stands.Crusaders.StarPlatinum;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -67,6 +68,8 @@ namespace JTA.Content.Stands.Crusaders
             Add("Pose", new SpriteAnimation(path + "SPPose").FillFrames(6, 136, 100, 5).SetLoop(false));
             Add("PoseIdle", new SpriteAnimation(path + "SPPoseIdle").FillFrames(9, 136, 100, 5));
 
+            Add("TimeStop", new SpriteAnimation(path + "SPTimeStop").FillFrames(24, 200, 160, 5));
+
             CurrentAnimation = "Spawn";
 
             Projectile.damage = 0;
@@ -110,6 +113,13 @@ namespace JTA.Content.Stands.Crusaders
             switch (CurrentAnimation) {
                 case "Spawn":
                     CurrentAnimation = "Idle";
+                    break;
+                case "TimeStop":
+                    if(anim.time == 0 && anim.currentFrame == 18) {
+                        TimeStopSystem.StopTimeFor(owner, 360);
+                        Projectile.NewProjectile(owner.GetSource_FromThis(), Projectile.Center, Vector2.Zero, ModContent.ProjectileType<ShockwaveProjectile>(), 0, 0, Projectile.owner);
+                    }
+                    nextAnimation = "Idle";
                     break;
                 case "Block":
                     direction = owner.direction;
