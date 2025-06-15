@@ -16,7 +16,7 @@ namespace JTA.Common.Players
 {
     public class StandPlayer : ModPlayer
     {
-        public const int UNSUMMONED = -999;
+        public const int INACTIVE_STAND_ID = -999;
         public const string NOSTAND = "None";
 
         public int activeStandProjectile;
@@ -33,6 +33,8 @@ namespace JTA.Common.Players
         public int tickrate = 20;
         public int elapsedTicks;
 
+        public bool standAutoMode;
+
         /// <summary>
         /// IDs of active perks;
         /// </summary>
@@ -41,9 +43,10 @@ namespace JTA.Common.Players
         public override void Initialize()
         {
             activePerks = [];
-            activeStandProjectile = UNSUMMONED;
+            activeStandProjectile = INACTIVE_STAND_ID;
             stand = "Star Platinum";
             selectedAbilityIndex = 0;
+            standAutoMode = false;
         }
 
         public override void ResetEffects()
@@ -52,7 +55,7 @@ namespace JTA.Common.Players
             if (parryTime > 0)
                 parryTime--;
             base.ResetEffects();
-            if (activeStandProjectile != UNSUMMONED) {
+            if (activeStandProjectile != INACTIVE_STAND_ID) {
                 Projectile proj = Main.projectile[activeStandProjectile];
                 if (proj.ModProjectile is StandProjectile stand)
                     if (stand.CurrentAnimation == "Block")
@@ -92,10 +95,10 @@ namespace JTA.Common.Players
 
         public override void UpdateDead()
         {
-            if (activeStandProjectile != UNSUMMONED) {
+            if (activeStandProjectile != INACTIVE_STAND_ID) {
                 var proj = Main.projectile[activeStandProjectile];
                 proj.Kill();
-                activeStandProjectile = UNSUMMONED;
+                activeStandProjectile = INACTIVE_STAND_ID;
             }
         }
 
@@ -120,6 +123,7 @@ namespace JTA.Common.Players
             packet.Write((byte)Player.whoAmI);
             packet.Write((int)activeStandProjectile);
             packet.Write((int)selectedAbilityIndex);
+            packet.Write((bool)standAutoMode);
             packet.Write(stand);
             packet.Send(toWho, fromWho);
         }
@@ -139,7 +143,7 @@ namespace JTA.Common.Players
             }
 
             if (KeybindSystem.SummonStand.JustPressed) {
-                if (activeStandProjectile == UNSUMMONED) {
+                if (activeStandProjectile == INACTIVE_STAND_ID) {
                     // summon logic
                     activeStandProjectile = Projectile.NewProjectile(
                         Player.GetSource_FromThis("JTA: Summon"), 
@@ -151,12 +155,19 @@ namespace JTA.Common.Players
                         Main.myPlayer);
                 }
             }
+
+            if (KeybindSystem.StandAutoMode.JustPressed)
+            {
+                standAutoMode = !standAutoMode;
+                Main.NewText($"Auto: {(standAutoMode ? "ON" : "OFF")}");
+            }
         }
 
         public void ReceiveSyncPlayer(BinaryReader reader)
         {
             activeStandProjectile = reader.ReadInt32();
             selectedAbilityIndex = reader.ReadInt32();
+            standAutoMode = reader.ReadBoolean();
             stand = reader.ReadString();
         }
 
@@ -165,6 +176,7 @@ namespace JTA.Common.Players
             StandPlayer clone = (StandPlayer)targetCopy;
             clone.activeStandProjectile = activeStandProjectile;
             clone.selectedAbilityIndex = selectedAbilityIndex;
+            clone.standAutoMode = standAutoMode;
             clone.stand = stand;
         }
 
@@ -172,7 +184,7 @@ namespace JTA.Common.Players
         {
             StandPlayer clone = (StandPlayer)clientPlayer;
 
-            if (activeStandProjectile != clone.activeStandProjectile || selectedAbilityIndex != clone.selectedAbilityIndex || stand != clone.stand) {
+            if (activeStandProjectile != clone.activeStandProjectile || selectedAbilityIndex != clone.selectedAbilityIndex || stand != clone.stand || standAutoMode != clone.standAutoMode) {
                 SyncPlayer(-1, Main.myPlayer, false);
             }
         }
@@ -188,7 +200,7 @@ namespace JTA.Common.Players
 
         public Projectile GetStandProjectile()
         {
-            if (activeStandProjectile != UNSUMMONED)
+            if (activeStandProjectile != INACTIVE_STAND_ID)
                 return Main.projectile[activeStandProjectile];
 
             return null;

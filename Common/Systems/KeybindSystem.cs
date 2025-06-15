@@ -9,6 +9,7 @@ namespace JTA.Common.Systems
         public static ModKeybind OpenAbilityMenu { get; private set; }
         public static ModKeybind SummonStand { get; private set; }
         public static ModKeybind StandPose { get; private set; }
+        public static ModKeybind StandAutoMode { get; private set; }
 
         public static ModKeybind ArrowUp { get; private set; }
         public static ModKeybind ArrowDown { get; private set; }
@@ -21,6 +22,7 @@ namespace JTA.Common.Systems
             UseAbilityButton = KeybindLoader.RegisterKeybind(Mod, "Use Ability", "X");
             OpenAbilityMenu = KeybindLoader.RegisterKeybind(Mod, "Open Ability Menu", "F");
             StandPose = KeybindLoader.RegisterKeybind(Mod, "Pose", "C");
+            StandAutoMode = KeybindLoader.RegisterKeybind(Mod, "Stand: Auto Mode", Keys.CapsLock);
 
             ArrowUp = KeybindLoader.RegisterKeybind(Mod, "Menu Up", Keys.Up);
             ArrowDown = KeybindLoader.RegisterKeybind(Mod, "Menu Down", Keys.Down);
@@ -34,6 +36,7 @@ namespace JTA.Common.Systems
             OpenAbilityMenu = null;
             SummonStand = null;
             StandPose = null;
+            StandAutoMode = null;
 
             ArrowDown = null;
             ArrowLeft = null;

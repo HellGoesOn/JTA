@@ -9,6 +9,7 @@ Mods: {
 			"Menu Left.DisplayName": Menu  Left
 			"Menu Right.DisplayName": Menu  Right
 			Pose.DisplayName: Pose
+			"Stand: Auto Mode.DisplayName": Stand:  Auto  Mode
 		}
 
 		Projectiles: {

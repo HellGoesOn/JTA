@@ -1,6 +1,9 @@
-﻿using JTA.Content.Stands.Crusaders;
+﻿using JTA.Common.Players;
+using JTA.Content.Stands;
+using JTA.Content.Stands.Crusaders;
 using JTA.Content.Stands.Crusaders.StarPlatinum;
 using System.Collections.Generic;
+using Terraria;
 using Terraria.ModLoader;
 
 namespace JTA.Content

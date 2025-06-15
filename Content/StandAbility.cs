@@ -1,4 +1,5 @@
-﻿using Terraria;
+﻿using System.Reflection;
+using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -6,11 +7,13 @@ namespace JTA.Content
 {
     public abstract class StandAbility
     {
+        public float Range { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
 
         public StandAbility(string name, string description) 
         {
+            Range = 5 * 16;
             Name = name;
             Description = description;
         }

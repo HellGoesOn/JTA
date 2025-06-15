@@ -1,5 +1,6 @@
 ﻿using JTA.Common.Graphics;
 using JTA.Common.Players;
+using JTA.Content;
 using JTA.Content.Stands;
 using Microsoft.CodeAnalysis;
 using Microsoft.Xna.Framework;
@@ -18,9 +19,13 @@ namespace JTA.Common.Stands
 
         public bool mouseLeftState, mouseRightState;
 
+        public float searchRange = 1280; // ~40 tiles
+
         public Dictionary<string, SpriteAnimation> animations = [];
 
         public override string Texture => "JTA/Assets/Textures/Kurwa";
+
+        public StandAI standAI;
 
         public sealed override void SetDefaults()
         {
@@ -42,6 +47,14 @@ namespace JTA.Common.Stands
         public sealed override void AI()
         {
             base.AI();
+
+            Projectile.TryGetOwner(out var owner);
+
+            if (StandPlayer.Get(owner).standAutoMode)
+            {
+                standAI.Update(owner, Projectile);
+            }
+
             SafeAI();
 
             if(animations.TryGetValue(CurrentAnimation, out SpriteAnimation value)) {
@@ -54,8 +67,6 @@ namespace JTA.Common.Stands
                     Projectile.netUpdate = true;
                 }
             }
-
-            Projectile.TryGetOwner(out var owner);
 
             mouseLeftState = owner.controlUseItem;
             mouseRightState = owner.controlUseTile;
@@ -89,8 +100,8 @@ namespace JTA.Common.Stands
             CurrentAnimation = reader.ReadString();
         }
 
-        public bool LeftClick => Main.player[Projectile.owner].whoAmI == Main.myPlayer && Main.player[Projectile.owner].controlUseItem && !mouseLeftState;
-        public bool RightClick => Main.player[Projectile.owner].whoAmI == Main.myPlayer && Main.player[Projectile.owner].controlUseTile && !mouseRightState;
+        public bool LeftClick => Main.player[Projectile.owner].whoAmI == Main.myPlayer && Main.player[Projectile.owner].controlUseItem && !mouseLeftState && NoAuto;
+        public bool RightClick => Main.player[Projectile.owner].whoAmI == Main.myPlayer && Main.player[Projectile.owner].controlUseTile && !mouseRightState && NoAuto;
 
         public string CurrentAnimation 
             { 
@@ -102,7 +113,30 @@ namespace JTA.Common.Stands
             }
         }
 
-        public Vector2 MousePosition(Player player) => StandPlayer.Get(player).MousePosition;
+        public Vector2 MousePosition(Player player)
+        {
+            if (Projectile.owner == Main.myPlayer)
+                return Main.MouseWorld;
+
+            return StandPlayer.Get(player).MousePosition;
+        }
+        public Vector2 GetTargetPosition(Player player)
+        {
+            var plr = StandPlayer.Get(player);
+
+            if (plr.standAutoMode)
+            {
+                NPC npc = Projectile.FindTargetWithinRange(searchRange);
+
+                if (npc != null && npc.active)
+                {
+                    return npc.Center;
+                }
+            }
+
+            return MousePosition(player);
+
+        }
 
         public void Add(string animationName, SpriteAnimation animation)
         {
@@ -112,7 +146,7 @@ namespace JTA.Common.Stands
         public override void OnKill(int timeLeft)
         {
             if (Projectile.TryGetOwner(out var plr))
-                StandPlayer.Get(plr).activeStandProjectile = StandPlayer.UNSUMMONED;
+                StandPlayer.Get(plr).activeStandProjectile = StandPlayer.INACTIVE_STAND_ID;
             
         }
 
@@ -131,5 +165,7 @@ namespace JTA.Common.Stands
             proj.DamageType = Projectile.DamageType;
             proj.direction = Projectile.direction;
         }
+
+        public bool NoAuto => !StandPlayer.Get(Main.player[Projectile.owner]).standAutoMode;
     }
 }

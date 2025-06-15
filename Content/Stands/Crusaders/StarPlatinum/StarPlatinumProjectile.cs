@@ -19,21 +19,22 @@ namespace JTA.Content.Stands.Crusaders
     /// <summary>
     /// Also check StandDefinitions.cs for additional context.
     /// This handles just the stand you see on screen.
-    /// Abilities & making the stand obtainable is handle there.
+    /// Abilities & making the stand obtainable is handled there.
     /// </summary>
     public class StarPlatinumProjectile : StandProjectile
     {
-        int recoveryTime;
-        int punchCounter;
+        internal int recoveryTime;
+        internal int punchCounter;
+        internal int barrageDuration;
         public int startDirection;
 
-        float range;
-        int direction;
+        internal float range;
+        internal int direction;
 
-        bool mouseMiddleOld;
-        bool mouseMiddleReleaseOld;
+        internal bool mouseMiddleOld;
+        internal bool mouseMiddleReleaseOld;
 
-        int lmbHoldTime;
+        internal int lmbHoldTime;
 
         List<StarFist> fists;
 
@@ -43,7 +44,7 @@ namespace JTA.Content.Stands.Crusaders
             for(int i = 0; i < 30; i++) {
                 fists.Add(new StarFist());
             }
-            range = 32 * 7;
+            range = 32 * 10;
             Projectile.timeLeft = 10;
             Projectile.tileCollide = false;
             var path = "JTA/Content/Stands/Crusaders/StarPlatinum/";
@@ -52,7 +53,7 @@ namespace JTA.Content.Stands.Crusaders
             Add("Punch1", new SpriteAnimation(path + "SPPunch2").FillFrames(7, 132, 100, 3));
             Add("Punch3", new SpriteAnimation(path + "SPPunch3").FillFrames(11, 118, 100, 3));
             Add("Barrage", new SpriteAnimation(path + "SPBarrage").FillFrames(6, 92, 100, 2));
-            Add("Finger", new SpriteAnimation(path + "SPStarFinger").FillFrames(16, 292, 100, 5).SetSpeed(10, 3));
+            Add("Finger", new SpriteAnimation(path + "SPStarFinger").FillFrames(16, 292, 100, 5).SetSpeed(10, 4));
             Add("Suck", new SpriteAnimation(path + "SPZuck").FillFrames(23, 300, 202, 5));
             Add("GPJump", new SpriteAnimation(path + "SPGroundPound").FillFrames(8, 148, 206, 5).SetLoop(false));
             Add("GPFall", new SpriteAnimation(path + "SPGroundPound").FillFrames(12, 148, 206, 5).SetLoop(false));
@@ -74,6 +75,102 @@ namespace JTA.Content.Stands.Crusaders
 
             Projectile.damage = 0;
             Projectile.width = Projectile.height = 100;
+
+            standAI = new StandAI();
+            standAI.abilities.Add(new AbilityAI(new AIActionAbility()
+            {
+                Name = "Punch",
+                action = (plr) =>
+                {
+                    if (++punchCounter > 3)
+                        punchCounter = 1;
+                    Projectile.netUpdate = true;
+                    nextAnimation = $"Punch{punchCounter}";
+                }
+            })
+            {
+                condition = (plr, proj) =>
+                {
+                    if (animations == null || animations.Count <= 0 || !animations.ContainsKey(CurrentAnimation))
+                        return false;
+                    var anim = animations[CurrentAnimation];
+                    return (CurrentAnimation == "Idle" 
+                    || (CurrentAnimation.Contains("Punch") && anim.time == 0 && anim.currentFrame == 1+punchCounter)) 
+                    && Projectile.FindTargetWithinRange(range) != null;
+                },
+                internalCooldownMax = 6
+            });
+
+            standAI.abilities.Add(new AbilityAI(new AIActionAbility()
+            {
+                Name = "Barrage",
+                action = (plr) =>
+                {
+                    Projectile.netUpdate = true;
+                    barrageDuration = 60;
+                    CurrentAnimation = "Barrage";
+                    nextAnimation = "Barrage";
+                }
+            }, 1, 300)
+            {
+                condition = (plr, proj) =>
+                {
+                    if (animations == null || animations.Count <= 0 || !animations.ContainsKey(CurrentAnimation))
+                        return false;
+                    var anim = animations[CurrentAnimation];
+                    return Projectile.FindTargetWithinRange(range) != null;
+                },
+                duration = 60
+            });
+
+            standAI.abilities.Add(new AbilityAI(StandDefinitions.Stands["Star Platinum"].Abilities[3], 2, 15*60)
+                {
+                condition = (plr, proj) =>
+                {
+                    var npc = Projectile.FindTargetWithinRange(range + 20 * 32);
+
+                    return npc != null && Vector2.Distance(npc.Center, Projectile.Center) >= range;
+                },
+                duration = 60,
+            });
+
+            standAI.abilities.Add(new AbilityAI(StandDefinitions.Stands["Star Platinum"].Abilities[0], 2, 7 * 60)
+            {
+                condition = (plr, proj) =>
+                {
+                    var npc = Projectile.FindTargetWithinRange(range + 2* 32);
+
+                    return npc != null && (plr.Center.Y-npc.Center.Y) <= 32;
+                },
+                duration = 60
+            });
+
+            standAI.abilities.Add(new AbilityAI(StandDefinitions.Stands["Star Platinum"].Abilities[4], 2, 90 * 60)
+            {
+                priority = 10,
+                condition = (plr, proj) =>
+                {
+                    return plr.statLife <= plr.statLifeMax2 * 0.2f;
+                },
+                duration = 60
+            });
+
+            standAI.abilities.Add(new AbilityAI(new AIActionAbility()
+            {
+                Name = "Charged Punch",
+                action = (plr) =>
+                {
+                    CurrentAnimation = "ChargePrep";
+                }
+            }, 3, 5 * 60, 3 * 60)
+            {
+                condition =(plr, proj) =>
+                {
+                    var npc = Projectile.FindTargetWithinRange(range);
+
+                    return npc != null;
+                }
+            });
         }
 
         public override bool PreAI()
@@ -94,7 +191,7 @@ namespace JTA.Content.Stands.Crusaders
                 return;
             }
 
-            if (owner.controlUseItem) {
+            if (owner.controlUseItem && NoAuto) {
                 lmbHoldTime++;
             }
             else {
@@ -104,9 +201,11 @@ namespace JTA.Content.Stands.Crusaders
             if (recoveryTime > 0)
                 recoveryTime--;
 
-            var mousePosition = Main.MouseWorld;
-            if (Projectile.owner != Main.myPlayer)
-                mousePosition = MousePosition(owner);
+            if (barrageDuration > 0)
+                barrageDuration--;
+
+            var mousePosition = GetTargetPosition(owner);
+
             //Main.NewText($"PLR: {mousePosition} MOUSE: {Main.MouseWorld}");
             var dir = (mousePosition - owner.Center).SafeNormalize(-Vector2.UnitX) * (Math.Clamp(Vector2.Distance(owner.Center, mousePosition), 0, range));
 
@@ -137,6 +236,7 @@ namespace JTA.Content.Stands.Crusaders
                     nextAnimation = "Idle";
                     break;
                 case "Barrage":
+
                     StarFist fist = fists[Main.rand.Next(fists.Count)];
                     if (fist.opacity <= 0) {
                         fist.distance = 0;
@@ -155,12 +255,12 @@ namespace JTA.Content.Stands.Crusaders
                     if (anim.currentFrame % 2 == 0 && anim.time == 0)
                         Damage(10, Projectile.Center, new Vector2(160, 100));
 
-                    if (!mouseLeftState)
+                    if ((!mouseLeftState && NoAuto) || barrageDuration <= 0)
                         nextAnimation = "Idle";
                     break;
                 case "Idle":
 
-                    if (mouseRightState)
+                    if (mouseRightState && NoAuto)
                         CurrentAnimation = "Block";
 
                     if (lmbHoldTime >= 30)
@@ -224,6 +324,15 @@ namespace JTA.Content.Stands.Crusaders
                 case "Finger":
                     owner.heldProj = Projectile.whoAmI;
                     direction = startDirection;
+
+                    if(!NoAuto)
+                    {
+                        var npc = Projectile.FindTargetWithinRange(range + 20* 32);
+
+                        if (npc != null)
+                            direction = npc.Center.X < owner.Center.X ? -1 : 1;
+                    }
+
                     Projectile.Center = Vector2.Lerp(Projectile.Center, owner.Center + new Vector2(140 * direction, -24), 0.4f);
                     nextAnimation = "Idle";
 
@@ -355,7 +464,7 @@ namespace JTA.Content.Stands.Crusaders
                     break;
                 case "Despawn":
                     Projectile.Kill();
-                    StandPlayer.Get(owner).activeStandProjectile = StandPlayer.UNSUMMONED;
+                    StandPlayer.Get(owner).activeStandProjectile = StandPlayer.INACTIVE_STAND_ID;
                     break;
             }
             if (Main.myPlayer == Projectile.owner) {
@@ -384,9 +493,9 @@ namespace JTA.Content.Stands.Crusaders
                 Main.spriteBatch.End();
                 Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, Main.DefaultSamplerState, DepthStencilState.None, Main.Rasterizer, null, Main.GameViewMatrix.ZoomMatrix);
                 if(CurrentAnimation == "GPJump")
-                    anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), Color.White * 0.75f, 0, scale: scale * 0.5f, sfx: sfx);
+                    anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), lightColor * 0.75f, 0, scale: scale * 0.5f, sfx: sfx);
                 else
-                    anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), Color.White, 0, scale: scale, sfx: sfx);
+                    anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), lightColor, 0, scale: scale, sfx: sfx);
                 var frame = anim.frames[anim.currentFrame];
                 Effect fx = ShaderSystem.FadeOutShader;
 
@@ -399,7 +508,7 @@ namespace JTA.Content.Stands.Crusaders
                 fx.Parameters["speed"].SetValue(6);
                 fx.CurrentTechnique.Passes[0].Apply();
 
-                anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), Color.White, 0, scale: scale, frameOffset: new Vector2(frame.width, 0), sfx: sfx);
+                anim.Draw(Main.spriteBatch, texture, (Projectile.Center - Main.screenPosition).Floor(), lightColor, 0, scale: scale, frameOffset: new Vector2(frame.width, 0), sfx: sfx);
 
                 Main.spriteBatch.End();
                 Main.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, DepthStencilState.None, Main.Rasterizer, null, Main.GameViewMatrix.TransformationMatrix);
@@ -409,7 +518,7 @@ namespace JTA.Content.Stands.Crusaders
                         var fist = fists[i];
                         var fistFrame = new Rectangle(0, 18 * fist.variation, 44, 18);
                         var finalOffset = new Vector2(fist.startOffset.X * -direction + fist.distance * direction, fist.startOffset.Y);
-                        Main.EntitySpriteDraw(fistTexture.Value, Projectile.Center + finalOffset - Main.screenPosition, fistFrame, Color.White * fist.opacity, 0f, new Vector2(22, 9), 1f, sfx);
+                        Main.EntitySpriteDraw(fistTexture.Value, Projectile.Center + finalOffset - Main.screenPosition, fistFrame, lightColor * fist.opacity, 0f, new Vector2(22, 9), 1f, sfx);
                     }
             }
         }
